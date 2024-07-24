@@ -1,117 +1,161 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useState} from 'react';
 import {
   SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
   Text,
-  useColorScheme,
-  View,
+  StyleSheet,
+  Pressable,
+  FlatList,
 } from 'react-native';
+import Form from './src/components/form';
+import Client from './src/components/client';
+import ClientDetails from './src/components/clientDetails';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+export type ClientSchema = {
+  id: number;
+  nameClient: string;
+  phoneClient: string;
+  priceClient: number;
+  observationsClient: string;
+  date: Date;
+};
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+// Inicializar el estado del cliente con valores por defecto
+export const defaultClient: ClientSchema = {
+  id: 0,
+  nameClient: '',
+  phoneClient: '',
+  priceClient: 0,
+  observationsClient: '',
+  date: new Date(),
+};
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+function App() {
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalClient, setModalClient] = useState(false);
+  const [clients, setClients] = useState<ClientSchema[]>([]);
+  const [client, setClient] = useState<ClientSchema>(defaultClient);
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+  const newDateHandler = () => {
+    setModalVisible(true);
+  };
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const addNewClient = (clientItem: ClientSchema) => {
+    setClients(prevClients => {
+      const updatedClients = [...prevClients, clientItem];
+      return updatedClients;
+    });
+  };
+
+  const editClient = (clientItem: ClientSchema) => {
+    const clientsUpdate = clients.map(item =>
+      item.id === clientItem.id ? clientItem : item,
+    );
+    setClients(clientsUpdate);
+    setClient(defaultClient);
+  };
+
+  const deleteClient = (id: ClientSchema['id']) => {
+    setClients(prevClients => {
+      const updatedClients = prevClients.filter(date => date.id !== id);
+      return updatedClients;
+    });
+  };
+  const closeModal = () => {
+    setModalVisible(false);
+    setClient(defaultClient);
+  };
+  const closeModalClientDetails = () => {
+    setModalClient(false);
+    setClient(defaultClient);
+  };
+
+  const handleDetailsClientModal = (clientItem: ClientSchema) => {
+    setModalClient(true);
+    setClient(clientItem);
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.title}>
+        Administrador de Cortes {''}{' '}
+        <Text style={styles.titleBold}>Barberia</Text>
+      </Text>
+      <Pressable style={styles.btnNewDate} onPress={newDateHandler}>
+        <Text style={styles.btnNewDateTitle}>Nuevo Corte</Text>
+      </Pressable>
+      {clients.length === 0 ? (
+        <Text style={styles.noClients}>No hay Cortes aún</Text>
+      ) : (
+        <FlatList
+          style={styles.list}
+          data={clients}
+          keyExtractor={item => item.id.toString()}
+          renderItem={({item}) => {
+            return (
+              <Client
+                item={item}
+                deleteClient={deleteClient}
+                setModalVisible={setModalVisible}
+                setClient={setClient}
+                handleDetailsClientModal={handleDetailsClientModal}
+              />
+            );
+          }}
+        />
+      )}
+      <Form
+        modalVisible={modalVisible}
+        client={client}
+        clients={clients}
+        closeModal={closeModal}
+        addNewClient={addNewClient}
+        editClient={editClient}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
+      <ClientDetails
+        modalClient={modalClient}
+        closeModalClientDetails={closeModalClientDetails}
+        client={client}
+      />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  container: {
+    flex: 1,
+    backgroundColor: '#f9fafb',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
+  title: {
+    textAlign: 'center',
+    fontSize: 30,
     fontWeight: '400',
+    color: '#9ca3af',
   },
-  highlight: {
-    fontWeight: '700',
+  titleBold: {
+    fontWeight: 'bold',
+    color: '#ef4444',
+  },
+  btnNewDate: {
+    margin: 20,
+    padding: 10,
+    backgroundColor: '#ef4444',
+    borderRadius: 10,
+  },
+  btnNewDateTitle: {
+    color: '#ffffff',
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  noClients: {
+    textAlign: 'center',
+    fontSize: 20,
+    fontWeight: '400',
+    color: '#9ca3af',
+  },
+  list: {
+    marginHorizontal: 20,
+    padding: 5,
   },
 });
 
